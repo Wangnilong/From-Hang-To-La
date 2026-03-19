@@ -82,10 +82,6 @@ export class ImageTable {
     this.root.innerHTML = `
       <section class="image-table-shell">
         <div class="toolbar">
-          <div class="toolbar-copy">
-            <h2>图片表格组件</h2>
-            <p>固定列、可增减行。点击任意单元格即可录入图片和说明文字。</p>
-          </div>
           <div class="toolbar-metrics" aria-label="表格状态"></div>
           <div class="toolbar-actions">
             <button class="ghost-button" type="button" data-action="reset-sample">恢复示例</button>
