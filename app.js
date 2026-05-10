@@ -131,7 +131,7 @@ class TierListApp {
           <div class="holding-head">
             <div>
               <strong>待放区</strong>
-              <span>搜索结果点“导入”，或从本地导入图片；拖进上方任意分区即可排名。</span>
+              <span>电脑可拖拽；手机先点海报，再点上方分区放入。</span>
             </div>
             <div class="holding-controls">
               <input class="sr-only" type="file" accept="image/*" multiple data-role="file-input" />
@@ -170,6 +170,27 @@ class TierListApp {
       const target = event.target instanceof Element ? event.target : null;
       const actionEl = target?.closest("[data-action]");
       const itemEl = target?.closest("[data-item-id]");
+      const dropTarget = target?.closest("[data-drop-target]");
+
+      if (actionEl) {
+        const action = actionEl.getAttribute("data-action");
+        if (action === "clear") {
+          this.clearItems();
+        }
+        if (action === "delete-selected") {
+          this.deleteSelected();
+        }
+        if (action === "delete-item") {
+          this.deleteItem(actionEl.getAttribute("data-delete-id"));
+        }
+        if (action === "import-result") {
+          this.importResult(actionEl.getAttribute("data-result-id"));
+        }
+        if (action === "import-local") {
+          this.fileInputEl.click();
+        }
+        return;
+      }
 
       if (itemEl) {
         this.selectedId = itemEl.getAttribute("data-item-id");
@@ -177,22 +198,8 @@ class TierListApp {
         return;
       }
 
-      if (!actionEl) {
-        return;
-      }
-
-      const action = actionEl.getAttribute("data-action");
-      if (action === "clear") {
-        this.clearItems();
-      }
-      if (action === "delete-selected") {
-        this.deleteSelected();
-      }
-      if (action === "import-result") {
-        this.importResult(actionEl.getAttribute("data-result-id"));
-      }
-      if (action === "import-local") {
-        this.fileInputEl.click();
+      if (dropTarget && this.selectedId) {
+        this.moveItem(this.selectedId, dropTarget.getAttribute("data-drop-target"));
       }
     });
 
@@ -293,16 +300,24 @@ class TierListApp {
 
   renderItems() {
     const renderItem = (item) => `
-      <button
+      <div
         class="rank-item ${item.id === this.selectedId ? "is-selected" : ""}"
-        type="button"
         draggable="true"
         data-item-id="${item.id}"
         title="${escapeAttribute(item.name)}"
+        role="button"
+        tabindex="0"
       >
+        <button
+          class="item-delete"
+          type="button"
+          data-action="delete-item"
+          data-delete-id="${item.id}"
+          aria-label="删除 ${escapeAttribute(item.name)}"
+        >×</button>
         <img src="${escapeAttribute(item.url)}" alt="${escapeAttribute(item.name)}" draggable="false" />
         <span>${escapeHtml(item.name)}</span>
-      </button>
+      </div>
     `;
 
     tiers.forEach((tier) => {
@@ -430,12 +445,22 @@ class TierListApp {
       return;
     }
 
-    const item = this.items.find((entry) => entry.id === this.selectedId);
-    this.items = this.items.filter((entry) => entry.id !== this.selectedId);
+    this.deleteItem(this.selectedId);
+  }
+
+  deleteItem(itemId) {
+    if (!itemId) {
+      return;
+    }
+
+    const item = this.items.find((entry) => entry.id === itemId);
+    this.items = this.items.filter((entry) => entry.id !== itemId);
     if (item?.isLocal) {
       URL.revokeObjectURL(item.url);
     }
-    this.selectedId = null;
+    if (this.selectedId === itemId) {
+      this.selectedId = null;
+    }
     this.render();
   }
 

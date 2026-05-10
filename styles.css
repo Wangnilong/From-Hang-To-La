@@ -363,6 +363,7 @@ h1 {
 }
 
 .rank-item {
+  position: relative;
   display: grid;
   grid-template-rows: var(--cell) 22px;
   width: var(--cell);
@@ -375,6 +376,7 @@ h1 {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
   cursor: grab;
   overflow: hidden;
+  touch-action: manipulation;
 }
 
 .rank-item:active {
@@ -401,6 +403,30 @@ h1 {
   -webkit-user-drag: none;
 }
 
+.item-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: 999px;
+  background: rgba(10, 12, 14, 0.82);
+  cursor: pointer;
+}
+
+.item-delete:hover {
+  background: rgba(206, 39, 59, 0.92);
+}
+
 .rank-item span {
   display: block;
   padding: 3px 5px 0;
@@ -425,7 +451,7 @@ h1 {
 
 @media (max-width: 860px) {
   :root {
-    --cell: 82px;
+    --cell: 76px;
   }
 
   .page-shell {
@@ -453,7 +479,7 @@ h1 {
   }
 
   .tier-row {
-    grid-template-columns: 82px minmax(0, 1fr);
+    grid-template-columns: 74px minmax(0, 1fr);
     min-height: 106px;
   }
 
@@ -462,5 +488,32 @@ h1 {
     min-height: 106px;
     gap: 7px;
     padding: 8px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 13vw, 3.3rem);
+  }
+
+  .search-results {
+    grid-template-columns: 1fr;
+  }
+
+  .result-card {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .result-card img {
+    width: 64px;
+    height: 82px;
+  }
+
+  .tier-label {
+    padding: 6px;
+    font-size: 1rem;
+  }
+
+  .item-delete {
+    width: 30px;
+    height: 30px;
   }
 }
