@@ -1,660 +1,603 @@
-/**
- * @typedef {{ groups: ColumnGroup[] }} TableSchema
- * @typedef {{ id: string, title: string, columns: ColumnDef[] }} ColumnGroup
- * @typedef {{ id: string, title: string, width?: number }} ColumnDef
- * @typedef {{ rows: TableRow[] }} TableData
- * @typedef {{ id: string, cells: Record<string, CellData> }} TableRow
- * @typedef {{ text?: string, image?: { url: string, alt?: string, fileName?: string } }} CellData
- */
+const tiers = [
+  { id: "hang", label: "夯", color: "#ea5a9b" },
+  { id: "top", label: "顶级", color: "#f0784d" },
+  { id: "elite", label: "人上人", color: "#ffb4b7" },
+  { id: "npc", label: "NPC", color: "#fff23d" },
+  { id: "done", label: "拉完了", color: "#75d7ff" },
+];
 
-const demoSchema = {
-  groups: [
-    {
-      id: "planning",
-      title: "内容策划",
-      columns: [
-        { id: "theme", title: "主题", width: 250 },
-        { id: "story", title: "场景说明", width: 300 },
-      ],
-    },
-    {
-      id: "visuals",
-      title: "视觉素材",
-      columns: [
-        { id: "heroImage", title: "主图", width: 260 },
-        { id: "detailImage", title: "细节图", width: 260 },
-      ],
-    },
-    {
-      id: "delivery",
-      title: "交付备注",
-      columns: [
-        { id: "cta", title: "引导信息", width: 240 },
-        { id: "notes", title: "补充备注", width: 280 },
-      ],
-    },
-  ],
-};
+const movieIndex = [
+  {
+    title: "肖申克的救赎",
+    description: "The Shawshank Redemption / 1994",
+    imageUrl: "https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
+    keywords: ["肖申克的救赎", "肖生克的救赎", "肖申克", "shawshank", "the shawshank redemption"],
+  },
+  {
+    title: "教父",
+    description: "The Godfather / 1972",
+    imageUrl: "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+    keywords: ["教父", "godfather", "the godfather"],
+  },
+  {
+    title: "黑暗骑士",
+    description: "The Dark Knight / 2008",
+    imageUrl: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+    keywords: ["黑暗骑士", "蝙蝠侠黑暗骑士", "dark knight", "batman"],
+  },
+  {
+    title: "盗梦空间",
+    description: "Inception / 2010",
+    imageUrl: "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+    keywords: ["盗梦空间", "全面启动", "inception"],
+  },
+  {
+    title: "星际穿越",
+    description: "Interstellar / 2014",
+    imageUrl: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+    keywords: ["星际穿越", "星际效应", "interstellar"],
+  },
+  {
+    title: "阿甘正传",
+    description: "Forrest Gump / 1994",
+    imageUrl: "https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg",
+    keywords: ["阿甘正传", "forrest gump"],
+  },
+  {
+    title: "低俗小说",
+    description: "Pulp Fiction / 1994",
+    imageUrl: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg",
+    keywords: ["低俗小说", "黑色追缉令", "pulp fiction"],
+  },
+  {
+    title: "千与千寻",
+    description: "Spirited Away / 2001",
+    imageUrl: "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+    keywords: ["千与千寻", "神隐少女", "spirited away"],
+  },
+  {
+    title: "寄生虫",
+    description: "Parasite / 2019",
+    imageUrl: "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg",
+    keywords: ["寄生虫", "寄生上流", "parasite"],
+  },
+  {
+    title: "泰坦尼克号",
+    description: "Titanic / 1997",
+    imageUrl: "https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg",
+    keywords: ["泰坦尼克号", "铁达尼号", "titanic"],
+  },
+  {
+    title: "黑客帝国",
+    description: "The Matrix / 1999",
+    imageUrl: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+    keywords: ["黑客帝国", "骇客任务", "matrix", "the matrix"],
+  },
+  {
+    title: "搏击俱乐部",
+    description: "Fight Club / 1999",
+    imageUrl: "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+    keywords: ["搏击俱乐部", "斗阵俱乐部", "fight club"],
+  },
+];
 
-const initialData = {
-  rows: [
-    createRow(demoSchema, {
-      theme: { text: "春季上新主视觉，强调自然光和手作质感。" },
-      story: { text: "桌面、陶器、花材都偏暖色，画面中尽量留白。" },
-      heroImage: { text: "点击这里上传主图" },
-      detailImage: { text: "可以放局部特写或材质图" },
-      cta: { text: "主标题建议控制在 10 个字内" },
-      notes: { text: "支持图片和文字同时存在，方便做视觉说明。" },
-    }),
-    createRow(demoSchema),
-  ],
-};
+const appRoot = document.querySelector("#app");
 
-export class ImageTable {
-  /**
-   * @param {HTMLElement} root
-   * @param {{
-   *   schema: TableSchema,
-   *   value: TableData,
-   *   onChange?: (nextValue: TableData) => void,
-   *   onAddRow?: () => void,
-   *   onDeleteRow?: (rowId: string) => void
-   * }} options
-   */
-  constructor(root, options) {
+class TierListApp {
+  constructor(root) {
     this.root = root;
-    this.schema = options.schema;
-    this.value = cloneData(options.value);
-    this.onChange = options.onChange;
-    this.onAddRow = options.onAddRow;
-    this.onDeleteRow = options.onDeleteRow;
-    this.columns = flattenColumns(this.schema);
-    this.activeCell = null;
-    this.previewImage = null;
-    this.objectUrls = new Set();
+    this.items = [];
+    this.searchResults = [];
+    this.selectedId = null;
+    this.draggingId = null;
+
     this.renderShell();
-    this.renderAll();
     this.bindEvents();
-    window.addEventListener("beforeunload", () => this.cleanupObjectUrls());
+    this.render();
+    this.setSearchMessage("搜索电影名，然后把海报导入待放区。");
   }
 
   renderShell() {
     this.root.innerHTML = `
-      <section class="image-table-shell">
-        <div class="toolbar">
-          <div class="toolbar-metrics" aria-label="表格状态"></div>
-          <div class="toolbar-actions">
-            <button class="ghost-button" type="button" data-action="reset-sample">恢复示例</button>
-            <button class="button" type="button" data-action="add-row">新增一行</button>
+      <section class="app-shell">
+        <header class="topbar">
+          <h1>电影排名榜</h1>
+          <div class="topbar-actions">
+            <button class="tool-button" type="button" data-action="delete-selected" disabled>删除选中</button>
+            <button class="tool-button" type="button" data-action="clear">清空图片</button>
           </div>
-        </div>
+        </header>
 
-        <div class="table-frame">
-          <div class="table-scroll">
-            <table class="image-table">
-              <colgroup></colgroup>
-              <thead></thead>
-              <tbody></tbody>
-            </table>
+        <section class="search-panel" aria-label="电影图片搜索">
+          <form class="search-form" data-role="search-form">
+            <input
+              class="search-input"
+              type="search"
+              placeholder="搜索电影图片，例如：肖申克的救赎"
+              data-role="search-input"
+              autocomplete="off"
+            />
+            <button class="search-button" type="submit">搜索</button>
+          </form>
+          <div class="search-message" data-role="search-message"></div>
+          <div class="search-results" data-role="search-results"></div>
+        </section>
+
+        <section class="tier-board" aria-label="电影排名榜">
+          <div class="tier-grid" data-role="tier-grid"></div>
+        </section>
+
+        <section class="holding-panel" data-drop-target="holding">
+          <div class="holding-head">
+            <div>
+              <strong>待放区</strong>
+              <span>搜索结果点“导入”，或从本地导入图片；拖进上方任意分区即可排名。</span>
+            </div>
+            <div class="holding-controls">
+              <input class="sr-only" type="file" accept="image/*" multiple data-role="file-input" />
+              <button class="local-import-button" type="button" data-action="import-local">导入本地图片</button>
+              <div class="holding-status" data-role="status">0 张电影</div>
+            </div>
           </div>
-        </div>
+          <div class="holding-area" data-drop-target="holding" data-role="holding-area"></div>
+        </section>
       </section>
-
-      <div class="panel-overlay" data-role="overlay"></div>
-
-      <aside class="editor-drawer" aria-hidden="true" data-role="drawer">
-        <div class="drawer-head">
-          <div>
-            <h3>编辑单元格</h3>
-            <p data-role="drawer-subtitle">选择一个单元格开始编辑</p>
-          </div>
-          <button class="icon-button" type="button" data-action="close-drawer" aria-label="关闭编辑面板">×</button>
-        </div>
-
-        <div class="drawer-section">
-          <span class="drawer-label">图片</span>
-          <div class="drawer-image" data-role="drawer-image"></div>
-          <div class="drawer-actions">
-            <input class="sr-only" type="file" accept="image/*" data-role="file-input" />
-            <button class="button" type="button" data-action="upload-image">上传或替换图片</button>
-            <button class="ghost-button" type="button" data-action="preview-image">预览</button>
-            <button class="ghost-button" type="button" data-action="remove-image">删除图片</button>
-          </div>
-          <p class="drawer-help">每个单元格仅支持 1 张图片。图片会在当前浏览器会话中本地预览。</p>
-        </div>
-
-        <div class="drawer-section">
-          <label class="drawer-label" for="cell-note">说明文字</label>
-          <textarea
-            id="cell-note"
-            class="drawer-textarea"
-            data-role="text-input"
-            placeholder="补充这个格子的说明文字，例如画面要求、文案建议、拍摄角度等"
-          ></textarea>
-        </div>
-
-        <div class="drawer-footer">
-          <span data-role="drawer-status">未选择单元格</span>
-          <span>修改会自动保存到当前表格状态</span>
-        </div>
-      </aside>
-
-      <div class="preview-backdrop" data-role="preview-backdrop">
-        <div class="preview-dialog">
-          <div class="preview-toolbar">
-            <strong data-role="preview-title">图片预览</strong>
-            <button class="ghost-button" type="button" data-action="close-preview">关闭</button>
-          </div>
-          <div class="preview-frame" data-role="preview-frame"></div>
-        </div>
-      </div>
     `;
 
-    this.metricsEl = this.root.querySelector(".toolbar-metrics");
-    this.colgroupEl = this.root.querySelector("colgroup");
-    this.theadEl = this.root.querySelector("thead");
-    this.tbodyEl = this.root.querySelector("tbody");
-    this.drawerEl = this.root.querySelector('[data-role="drawer"]');
-    this.overlayEl = this.root.querySelector('[data-role="overlay"]');
-    this.drawerImageEl = this.root.querySelector('[data-role="drawer-image"]');
-    this.drawerSubtitleEl = this.root.querySelector('[data-role="drawer-subtitle"]');
-    this.drawerStatusEl = this.root.querySelector('[data-role="drawer-status"]');
-    this.textInputEl = this.root.querySelector('[data-role="text-input"]');
+    this.gridEl = this.root.querySelector('[data-role="tier-grid"]');
+    this.holdingAreaEl = this.root.querySelector('[data-role="holding-area"]');
+    this.statusEl = this.root.querySelector('[data-role="status"]');
     this.fileInputEl = this.root.querySelector('[data-role="file-input"]');
-    this.previewButtonEl = this.root.querySelector('[data-action="preview-image"]');
-    this.removeImageButtonEl = this.root.querySelector('[data-action="remove-image"]');
-    this.previewBackdropEl = this.root.querySelector('[data-role="preview-backdrop"]');
-    this.previewFrameEl = this.root.querySelector('[data-role="preview-frame"]');
-    this.previewTitleEl = this.root.querySelector('[data-role="preview-title"]');
+    this.deleteButtonEl = this.root.querySelector('[data-action="delete-selected"]');
+    this.searchFormEl = this.root.querySelector('[data-role="search-form"]');
+    this.searchInputEl = this.root.querySelector('[data-role="search-input"]');
+    this.searchMessageEl = this.root.querySelector('[data-role="search-message"]');
+    this.searchResultsEl = this.root.querySelector('[data-role="search-results"]');
   }
 
   bindEvents() {
-    this.root.addEventListener("click", (event) => {
-      const target = /** @type {HTMLElement} */ (event.target);
-      if (target === this.previewBackdropEl) {
-        this.closePreview();
-        return;
-      }
-
-      const actionEl = target.closest("[data-action]");
-      if (actionEl) {
-        const action = actionEl.getAttribute("data-action");
-        if (action) {
-          this.handleAction(action, actionEl);
-          return;
-        }
-      }
-
-      const cellButton = target.closest("[data-cell-trigger]");
-      if (cellButton) {
-        this.openCell(cellButton.getAttribute("data-row-id"), cellButton.getAttribute("data-column-id"));
-      }
+    this.searchFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      this.searchMovies(this.searchInputEl.value.trim());
     });
 
     this.fileInputEl.addEventListener("change", (event) => {
-      const file = event.target.files?.[0];
-      if (file) {
-        this.attachImage(file);
-      }
+      this.importLocalFiles(Array.from(event.target.files ?? []));
       event.target.value = "";
     });
 
-    this.textInputEl.addEventListener("input", (event) => {
-      if (!this.activeCell) {
+    this.root.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const actionEl = target?.closest("[data-action]");
+      const itemEl = target?.closest("[data-item-id]");
+
+      if (itemEl) {
+        this.selectedId = itemEl.getAttribute("data-item-id");
+        this.renderItems();
         return;
       }
-      this.patchActiveCell({ text: event.target.value });
+
+      if (!actionEl) {
+        return;
+      }
+
+      const action = actionEl.getAttribute("data-action");
+      if (action === "clear") {
+        this.clearItems();
+      }
+      if (action === "delete-selected") {
+        this.deleteSelected();
+      }
+      if (action === "import-result") {
+        this.importResult(actionEl.getAttribute("data-result-id"));
+      }
+      if (action === "import-local") {
+        this.fileInputEl.click();
+      }
+    });
+
+    this.root.addEventListener("dragstart", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const itemEl = target?.closest("[data-item-id]");
+      if (!itemEl || !event.dataTransfer) {
+        return;
+      }
+
+      const itemId = itemEl.getAttribute("data-item-id");
+      this.draggingId = itemId;
+      this.selectedId = itemId;
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", itemId);
+      itemEl.classList.add("is-dragging");
+      this.deleteButtonEl.disabled = false;
+    });
+
+    this.root.addEventListener("dragend", () => {
+      this.draggingId = null;
+      this.root.querySelectorAll(".is-over, .is-dragging").forEach((el) => {
+        el.classList.remove("is-over", "is-dragging");
+      });
+    });
+
+    this.root.addEventListener("dragover", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const dropTarget = target?.closest("[data-drop-target]");
+      if (!dropTarget) {
+        return;
+      }
+
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "move";
+      }
+      this.markDropTarget(dropTarget);
+    });
+
+    this.root.addEventListener("dragleave", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const dropTarget = target?.closest("[data-drop-target]");
+      if (dropTarget && !dropTarget.contains(event.relatedTarget)) {
+        dropTarget.classList.remove("is-over");
+      }
+    });
+
+    this.root.addEventListener("drop", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const dropTarget = target?.closest("[data-drop-target]");
+      if (!dropTarget) {
+        return;
+      }
+
+      event.preventDefault();
+      dropTarget.classList.remove("is-over");
+      const files = Array.from(event.dataTransfer?.files ?? []).filter((file) => file.type.startsWith("image/"));
+      if (files.length) {
+        this.importLocalFiles(files, dropTarget.getAttribute("data-drop-target"));
+        return;
+      }
+
+      const itemId = event.dataTransfer?.getData("text/plain") || this.draggingId;
+      if (itemId) {
+        this.moveItem(itemId, dropTarget.getAttribute("data-drop-target"));
+      }
     });
 
     window.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        if (this.previewImage) {
-          this.closePreview();
-          return;
-        }
-        if (this.activeCell) {
-          this.closeDrawer();
-        }
+      if ((event.key === "Backspace" || event.key === "Delete") && this.selectedId) {
+        event.preventDefault();
+        this.deleteSelected();
       }
     });
   }
 
-  handleAction(action, actionEl) {
-    if (action === "add-row") {
-      this.addRow();
-      return;
-    }
-
-    if (action === "reset-sample") {
-      this.cleanupObjectUrls();
-      this.value = cloneData(initialData);
-      this.closeDrawer();
-      this.closePreview();
-      this.renderAll();
-      this.onChange?.(cloneData(this.value));
-      return;
-    }
-
-    if (action === "close-drawer") {
-      this.closeDrawer();
-      return;
-    }
-
-    if (action === "upload-image") {
-      this.fileInputEl.click();
-      return;
-    }
-
-    if (action === "preview-image") {
-      if (!this.activeCell?.cell.image) {
-        return;
-      }
-      this.openPreview(this.activeCell.cell.image);
-      return;
-    }
-
-    if (action === "remove-image") {
-      this.patchActiveCell({ image: undefined });
-      return;
-    }
-
-    if (action === "close-preview") {
-      this.closePreview();
-      return;
-    }
-
-    if (action === "close-overlay") {
-      this.closeDrawer();
-      return;
-    }
-
-    const rowId = actionEl.getAttribute("data-row-id");
-    if (!rowId) {
-      return;
-    }
-
-    if (action === "delete-row") {
-      this.deleteRow(rowId);
-      return;
-    }
-
-    if (action === "duplicate-row") {
-      this.duplicateRow(rowId);
-      return;
-    }
-
-    if (action === "move-up") {
-      this.moveRow(rowId, -1);
-      return;
-    }
-
-    if (action === "move-down") {
-      this.moveRow(rowId, 1);
-      return;
-    }
-
+  render() {
+    this.renderTiers();
+    this.renderItems();
+    this.updateStatus();
   }
 
-  renderAll() {
-    this.renderMetrics();
-    this.renderTable();
-    this.renderDrawer();
-    this.renderPreview();
-  }
-
-  renderMetrics() {
-    const imageCount = this.value.rows.reduce((count, row) => {
-      return count + Object.values(row.cells).filter((cell) => cell.image).length;
-    }, 0);
-    const noteCount = this.value.rows.reduce((count, row) => {
-      return count + Object.values(row.cells).filter((cell) => cell.text).length;
-    }, 0);
-
-    this.metricsEl.innerHTML = `
-      <div class="metric">
-        <span>行数</span>
-        <strong>${this.value.rows.length}</strong>
-      </div>
-      <div class="metric">
-        <span>图片单元格</span>
-        <strong>${imageCount}</strong>
-      </div>
-      <div class="metric">
-        <span>说明文字</span>
-        <strong>${noteCount}</strong>
-      </div>
-    `;
-  }
-
-  renderTable() {
-    this.colgroupEl.innerHTML = this.columns
-      .map((column) => `<col style="width: ${column.width ?? 240}px" />`)
-      .join("");
-
-    this.theadEl.innerHTML = `
-      <tr class="group-row">
-        ${this.schema.groups
-          .map((group) => `<th colspan="${group.columns.length}" scope="colgroup">${escapeHtml(group.title)}</th>`)
-          .join("")}
-      </tr>
-      <tr class="column-row">
-        ${this.columns.map((column) => `<th scope="col">${escapeHtml(column.title)}</th>`).join("")}
-      </tr>
-    `;
-
-    this.renderRows();
-  }
-
-  renderRows() {
-    this.tbodyEl.innerHTML = this.value.rows
-      .map((row, rowIndex) => {
-        return `
-          <tr data-row-id="${row.id}">
-            ${this.columns
-              .map((column, columnIndex) => {
-                const cell = row.cells[column.id] ?? {};
-                const isActive = this.activeCell?.rowId === row.id && this.activeCell?.columnId === column.id;
-                const content = this.renderCellContent(cell);
-                const maybeToolbar =
-                  columnIndex === this.columns.length - 1
-                    ? `
-                      <div class="row-toolbar" role="toolbar" aria-label="行操作">
-                        <button class="mini-button" type="button" data-action="move-up" data-row-id="${row.id}" aria-label="上移" ${rowIndex === 0 ? "disabled" : ""}>↑</button>
-                        <button class="mini-button" type="button" data-action="move-down" data-row-id="${row.id}" aria-label="下移" ${rowIndex === this.value.rows.length - 1 ? "disabled" : ""}>↓</button>
-                        <button class="mini-button" type="button" data-action="duplicate-row" data-row-id="${row.id}">复制</button>
-                        <button class="mini-button" type="button" data-action="delete-row" data-row-id="${row.id}">删除</button>
-                      </div>
-                    `
-                    : "";
-
-                return `
-                  <td class="${columnIndex === this.columns.length - 1 ? "row-toolbar-anchor" : ""}">
-                    <button
-                      class="cell-button ${isActive ? "is-active" : ""}"
-                      type="button"
-                      data-cell-trigger
-                      data-row-id="${row.id}"
-                      data-column-id="${column.id}"
-                    >
-                      ${content}
-                    </button>
-                    ${maybeToolbar}
-                  </td>
-                `;
-              })
-              .join("")}
-          </tr>
-        `;
-      })
+  renderTiers() {
+    this.gridEl.innerHTML = tiers
+      .map(
+        (tier) => `
+          <div class="tier-row" style="--tier-color: ${tier.color}">
+            <div class="tier-label">${tier.label}</div>
+            <div class="tier-lane" data-drop-target="${tier.id}">
+              <span class="lane-empty">拖到这里</span>
+            </div>
+          </div>
+        `,
+      )
       .join("");
   }
 
-  renderCellContent(cell) {
-    const tags = [];
-    if (cell.image) {
-      tags.push('<span class="cell-tag">已添加图片</span>');
-    }
-    if (cell.text) {
-      tags.push('<span class="cell-tag">含说明</span>');
-    }
-
-    if (!cell.image && !cell.text) {
-      return `<div class="cell-empty">添加图片或说明<br />点击打开编辑面板</div>`;
-    }
-
-    return `
-      ${cell.image ? `<div class="cell-thumb"><img src="${escapeAttribute(cell.image.url)}" alt="${escapeAttribute(cell.image.alt ?? "")}" /></div>` : ""}
-      ${cell.text ? `<p class="cell-text">${escapeHtml(cell.text)}</p>` : ""}
-      ${tags.length ? `<div class="cell-tags">${tags.join("")}</div>` : ""}
+  renderItems() {
+    const renderItem = (item) => `
+      <button
+        class="rank-item ${item.id === this.selectedId ? "is-selected" : ""}"
+        type="button"
+        draggable="true"
+        data-item-id="${item.id}"
+        title="${escapeAttribute(item.name)}"
+      >
+        <img src="${escapeAttribute(item.url)}" alt="${escapeAttribute(item.name)}" draggable="false" />
+        <span>${escapeHtml(item.name)}</span>
+      </button>
     `;
+
+    tiers.forEach((tier) => {
+      const laneEl = this.gridEl.querySelector(`[data-drop-target="${tier.id}"]`);
+      const laneItems = this.items.filter((item) => item.tierId === tier.id);
+      laneEl.innerHTML = `${laneItems.map(renderItem).join("")}<span class="lane-empty">拖到这里</span>`;
+      laneEl.classList.toggle("has-items", laneItems.length > 0);
+    });
+
+    const holdingItems = this.items.filter((item) => !item.tierId);
+    this.holdingAreaEl.innerHTML = holdingItems.length
+      ? holdingItems.map(renderItem).join("")
+      : `<span class="holding-empty">导入电影海报后会出现在这里</span>`;
+    this.holdingAreaEl.classList.toggle("has-items", holdingItems.length > 0);
+    this.deleteButtonEl.disabled = !this.selectedId;
   }
 
-  renderDrawer() {
-    const isOpen = Boolean(this.activeCell);
-    this.overlayEl.classList.toggle("is-open", isOpen);
-    this.drawerEl.classList.toggle("is-open", isOpen);
-    this.drawerEl.setAttribute("aria-hidden", String(!isOpen));
-
-    if (!this.activeCell) {
-      this.overlayEl.setAttribute("data-action", "");
-      this.drawerSubtitleEl.textContent = "选择一个单元格开始编辑";
-      this.drawerStatusEl.textContent = "未选择单元格";
-      this.drawerImageEl.innerHTML = `<div class="drawer-empty">先点击表格中的任意格子，再为它上传图片或填写说明。</div>`;
-      this.textInputEl.value = "";
-      this.previewButtonEl.disabled = true;
-      this.removeImageButtonEl.disabled = true;
+  searchMovies(query) {
+    if (!query) {
+      this.setSearchMessage("请输入电影名。");
       return;
     }
 
-    this.overlayEl.setAttribute("data-action", "close-overlay");
-    const { rowId, columnId, cell } = this.activeCell;
-    const column = this.columns.find((item) => item.id === columnId);
-    const rowIndex = this.value.rows.findIndex((row) => row.id === rowId) + 1;
-    const group = this.schema.groups.find((entry) => entry.columns.some((item) => item.id === columnId));
-
-    this.drawerSubtitleEl.textContent = `${group?.title ?? "未分组"} / ${column?.title ?? "未命名列"}`;
-    this.drawerStatusEl.textContent = `正在编辑第 ${rowIndex} 行`;
-    this.textInputEl.value = cell.text ?? "";
-    const hasImage = Boolean(cell.image);
-    this.previewButtonEl.disabled = !hasImage;
-    this.removeImageButtonEl.disabled = !hasImage;
-    this.drawerImageEl.innerHTML = cell.image
-      ? `<img src="${escapeAttribute(cell.image.url)}" alt="${escapeAttribute(cell.image.alt ?? "")}" />`
-      : `<div class="drawer-empty">这个单元格还没有图片。<br />可以上传一张主图或说明图。</div>`;
+    const results = getMovieSearchResults(query);
+    this.searchResults = results;
+    this.renderSearchResults();
+    this.setSearchMessage(results.some((result) => result.isGenerated) ? "没有匹配到内置海报，已生成一张可导入的电影卡片。" : `找到 ${results.length} 个结果。`);
   }
 
-  renderPreview() {
-    const isOpen = Boolean(this.previewImage);
-    this.previewBackdropEl.classList.toggle("is-open", isOpen);
+  renderSearchResults() {
+    this.searchResultsEl.innerHTML = this.searchResults
+      .map(
+        (result) => `
+          <article class="result-card">
+            <img src="${escapeAttribute(result.imageUrl)}" alt="${escapeAttribute(result.title)}" />
+            <div>
+              <h2>${escapeHtml(result.title)}</h2>
+              <p>${escapeHtml(result.description || "电影图片结果")}</p>
+            </div>
+            <button class="import-button" type="button" data-action="import-result" data-result-id="${result.id}">
+              导入
+            </button>
+          </article>
+        `,
+      )
+      .join("");
+  }
 
-    if (!this.previewImage) {
-      this.previewTitleEl.textContent = "图片预览";
-      this.previewFrameEl.innerHTML = "";
+  importResult(resultId) {
+    const result = this.searchResults.find((entry) => entry.id === resultId);
+    if (!result) {
       return;
     }
 
-    this.previewTitleEl.textContent = this.previewImage.fileName || "图片预览";
-    this.previewFrameEl.innerHTML = `<img src="${escapeAttribute(this.previewImage.url)}" alt="${escapeAttribute(this.previewImage.alt ?? "")}" />`;
-  }
-
-  addRow() {
-    this.value.rows.push(createRow(this.schema));
-    this.renderAll();
-    this.onAddRow?.();
-    this.onChange?.(cloneData(this.value));
-  }
-
-  deleteRow(rowId) {
-    const rowIndex = this.value.rows.findIndex((row) => row.id === rowId);
-    if (rowIndex === -1) {
-      return;
-    }
-
-    this.value.rows.splice(rowIndex, 1);
-    if (this.activeCell?.rowId === rowId) {
-      this.activeCell = null;
-    }
-    this.renderAll();
-    this.onDeleteRow?.(rowId);
-    this.onChange?.(cloneData(this.value));
-  }
-
-  duplicateRow(rowId) {
-    const sourceRow = this.value.rows.find((row) => row.id === rowId);
-    if (!sourceRow) {
-      return;
-    }
-
-    const nextRow = {
+    const item = {
       id: createId(),
-      cells: Object.fromEntries(
-        this.columns.map((column) => {
-          const sourceCell = sourceRow.cells[column.id] ?? {};
-          return [
-            column.id,
-            {
-              text: sourceCell.text ?? "",
-              image: sourceCell.image ? { ...sourceCell.image } : undefined,
-            },
-          ];
-        }),
-      ),
+      name: result.title,
+      url: result.imageUrl,
+      tierId: null,
     };
-
-    const sourceIndex = this.value.rows.findIndex((row) => row.id === rowId);
-    this.value.rows.splice(sourceIndex + 1, 0, nextRow);
-    this.renderAll();
-    this.onChange?.(cloneData(this.value));
+    this.items.push(item);
+    this.selectedId = item.id;
+    this.render();
   }
 
-  moveRow(rowId, direction) {
-    const sourceIndex = this.value.rows.findIndex((row) => row.id === rowId);
-    const nextIndex = sourceIndex + direction;
-    if (sourceIndex === -1 || nextIndex < 0 || nextIndex >= this.value.rows.length) {
+  async importLocalFiles(files, targetId = "holding") {
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    if (!imageFiles.length) {
       return;
     }
 
-    const [row] = this.value.rows.splice(sourceIndex, 1);
-    this.value.rows.splice(nextIndex, 0, row);
-    this.renderAll();
-    this.onChange?.(cloneData(this.value));
+    this.statusEl.textContent = "正在导入图片...";
+    const importedItems = await Promise.all(
+      imageFiles.map(async (file) => {
+        const url = await createLocalImageUrl(file);
+        return {
+          id: createId(),
+          name: file.name.replace(/\.[^.]+$/, ""),
+          url,
+          tierId: this.normalizeTarget(targetId),
+          isLocal: true,
+        };
+      }),
+    );
+
+    this.items.push(...importedItems);
+    this.selectedId = importedItems[importedItems.length - 1].id;
+    this.render();
   }
 
-  openCell(rowId, columnId) {
-    if (!rowId || !columnId) {
+  moveItem(itemId, targetId) {
+    const item = this.items.find((entry) => entry.id === itemId);
+    if (!item) {
       return;
     }
-    const row = this.value.rows.find((entry) => entry.id === rowId);
-    if (!row) {
-      return;
-    }
-    this.activeCell = {
-      rowId,
-      columnId,
-      cell: row.cells[columnId] ?? {},
-    };
-    this.renderRows();
-    this.renderDrawer();
+
+    item.tierId = this.normalizeTarget(targetId);
+    this.selectedId = itemId;
+    this.draggingId = null;
+    this.render();
   }
 
-  closeDrawer() {
-    this.activeCell = null;
-    this.renderRows();
-    this.renderDrawer();
+  normalizeTarget(targetId) {
+    return tiers.some((tier) => tier.id === targetId) ? targetId : null;
   }
 
-  attachImage(file) {
-    if (!this.activeCell) {
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    this.objectUrls.add(url);
-    this.patchActiveCell({
-      image: {
-        url,
-        fileName: file.name,
-        alt: file.name.replace(/\.[^.]+$/, ""),
-      },
+  markDropTarget(activeTarget) {
+    this.root.querySelectorAll("[data-drop-target]").forEach((target) => {
+      target.classList.toggle("is-over", target === activeTarget);
     });
   }
 
-  patchActiveCell(patch) {
-    if (!this.activeCell) {
+  updateStatus() {
+    const total = this.items.length;
+    const placed = this.items.filter((item) => item.tierId).length;
+    this.statusEl.textContent = total ? `${placed} / ${total} 张已放入分区` : "0 张电影";
+  }
+
+  setSearchMessage(message) {
+    this.searchMessageEl.textContent = message;
+  }
+
+  deleteSelected() {
+    if (!this.selectedId) {
       return;
     }
-    const row = this.value.rows.find((entry) => entry.id === this.activeCell.rowId);
-    if (!row) {
-      return;
-    }
 
-    const existingCell = row.cells[this.activeCell.columnId] ?? {};
-    const nextCell = {
-      ...existingCell,
-      ...patch,
+    const item = this.items.find((entry) => entry.id === this.selectedId);
+    this.items = this.items.filter((entry) => entry.id !== this.selectedId);
+    if (item?.isLocal) {
+      URL.revokeObjectURL(item.url);
+    }
+    this.selectedId = null;
+    this.render();
+  }
+
+  clearItems() {
+    this.items.forEach((item) => {
+      if (item.isLocal) {
+        URL.revokeObjectURL(item.url);
+      }
+    });
+    this.items = [];
+    this.selectedId = null;
+    this.render();
+  }
+}
+
+function getMovieSearchResults(query) {
+  const correctedQuery = normalizeMovieQuery(query);
+  const localResults = searchLocalMovies(correctedQuery);
+  if (localResults.length) {
+    return localResults;
+  }
+
+  return [
+    {
+      id: `generated-${normalizeSearchText(correctedQuery)}`,
+      title: correctedQuery,
+      description: "本地生成的电影卡片，可先导入排名。",
+      imageUrl: createPosterDataUrl(correctedQuery),
+      isGenerated: true,
+    },
+  ];
+}
+
+function searchLocalMovies(query) {
+  const normalizedQuery = normalizeSearchText(query);
+  return movieIndex
+    .filter((movie) =>
+      movie.keywords.some((keyword) => {
+        const normalizedKeyword = normalizeSearchText(keyword);
+        return normalizedKeyword.includes(normalizedQuery) || normalizedQuery.includes(normalizedKeyword);
+      }),
+    )
+    .map((movie, index) => ({
+      id: `local-${index}-${normalizeSearchText(movie.title)}`,
+      title: movie.title,
+      description: movie.description,
+      imageUrl: movie.imageUrl,
+    }));
+}
+
+function normalizeMovieQuery(query) {
+  return query
+    .replaceAll("肖生克", "肖申克")
+    .replaceAll("肖申克救赎", "肖申克的救赎")
+    .trim();
+}
+
+function normalizeSearchText(value) {
+  return normalizeMovieQuery(value).toLowerCase().replace(/\s+/g, "");
+}
+
+function createPosterDataUrl(title) {
+  const safeTitle = title || "未命名电影";
+  const lines = splitPosterTitle(safeTitle);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="740" viewBox="0 0 500 740">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#2b2114"/>
+          <stop offset="0.48" stop-color="#111417"/>
+          <stop offset="1" stop-color="#030405"/>
+        </linearGradient>
+        <radialGradient id="spot" cx="50%" cy="16%" r="55%">
+          <stop offset="0" stop-color="#ffd37a" stop-opacity="0.56"/>
+          <stop offset="1" stop-color="#ffd37a" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="500" height="740" fill="url(#bg)"/>
+      <rect width="500" height="740" fill="url(#spot)"/>
+      <g opacity="0.24">
+        <rect x="34" y="42" width="36" height="656" fill="#f7efe0"/>
+        <rect x="430" y="42" width="36" height="656" fill="#f7efe0"/>
+        ${Array.from({ length: 12 }, (_, index) => {
+          const y = 62 + index * 52;
+          return `<rect x="42" y="${y}" width="20" height="24" rx="3" fill="#050607"/><rect x="438" y="${y}" width="20" height="24" rx="3" fill="#050607"/>`;
+        }).join("")}
+      </g>
+      <circle cx="250" cy="262" r="116" fill="none" stroke="#f2c46d" stroke-width="12" opacity="0.6"/>
+      <circle cx="250" cy="262" r="58" fill="none" stroke="#f2c46d" stroke-width="8" opacity="0.4"/>
+      <text x="250" y="472" fill="#fff7e8" font-size="52" font-weight="900" text-anchor="middle" font-family="Arial, sans-serif">${escapeXml(lines[0])}</text>
+      ${lines[1] ? `<text x="250" y="532" fill="#fff7e8" font-size="52" font-weight="900" text-anchor="middle" font-family="Arial, sans-serif">${escapeXml(lines[1])}</text>` : ""}
+      <text x="250" y="646" fill="#f2c46d" font-size="24" font-weight="700" text-anchor="middle" font-family="Arial, sans-serif">MOVIE CARD</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function splitPosterTitle(title) {
+  const compact = title.trim();
+  if (compact.length <= 8) {
+    return [compact];
+  }
+  return [compact.slice(0, 8), compact.slice(8, 16)];
+}
+
+async function createLocalImageUrl(file) {
+  if (file.type === "image/gif" || file.type === "image/svg+xml") {
+    return URL.createObjectURL(file);
+  }
+
+  const image = await loadLocalImage(file);
+  const maxSide = 720;
+  const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0, width, height);
+
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        resolve(URL.createObjectURL(blob || file));
+      },
+      "image/jpeg",
+      0.84,
+    );
+  });
+}
+
+function loadLocalImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
     };
-
-    if (!nextCell.text) {
-      delete nextCell.text;
-    }
-    if (!nextCell.image) {
-      delete nextCell.image;
-    }
-
-    row.cells[this.activeCell.columnId] = nextCell;
-    this.activeCell = {
-      ...this.activeCell,
-      cell: nextCell,
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("图片读取失败"));
     };
-    this.renderMetrics();
-    this.renderRows();
-    this.renderDrawer();
-    this.onChange?.(cloneData(this.value));
-  }
-
-  openPreview(image) {
-    this.previewImage = image;
-    this.renderPreview();
-  }
-
-  closePreview() {
-    this.previewImage = null;
-    this.renderPreview();
-  }
-
-  cleanupObjectUrls() {
-    this.objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    this.objectUrls.clear();
-  }
+    image.src = url;
+  });
 }
 
-function flattenColumns(schema) {
-  return schema.groups.flatMap((group) => group.columns);
-}
-
-function createRow(schema, cellOverrides = {}) {
-  return {
-    id: createId(),
-    cells: Object.fromEntries(
-      flattenColumns(schema).map((column) => [
-        column.id,
-        normalizeCell(cellOverrides[column.id]),
-      ]),
-    ),
-  };
-}
-
-function normalizeCell(cell) {
-  if (!cell) {
-    return {};
-  }
-  return {
-    text: cell.text ?? "",
-    image: cell.image ? { ...cell.image } : undefined,
-  };
-}
-
-function cloneData(data) {
-  return {
-    rows: data.rows.map((row) => ({
-      id: row.id,
-      cells: Object.fromEntries(
-        Object.entries(row.cells).map(([key, cell]) => [
-          key,
-          {
-            text: cell.text ?? "",
-            image: cell.image ? { ...cell.image } : undefined,
-          },
-        ]),
-      ),
-    })),
-  };
+function escapeXml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
 
 function createId() {
   if (globalThis.crypto?.randomUUID) {
     return globalThis.crypto.randomUUID();
   }
-  return `row-${Math.random().toString(36).slice(2, 10)}`;
+  return `item-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function escapeHtml(value) {
@@ -670,16 +613,6 @@ function escapeAttribute(value) {
   return escapeHtml(value);
 }
 
-const appRoot = document.querySelector("#app");
-
 if (appRoot) {
-  const table = new ImageTable(appRoot, {
-    schema: demoSchema,
-    value: initialData,
-    onChange: (nextValue) => {
-      window.demoTableValue = nextValue;
-    },
-  });
-
-  window.demoImageTable = table;
+  window.tierListApp = new TierListApp(appRoot);
 }
