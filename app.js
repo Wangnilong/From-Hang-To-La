@@ -90,6 +90,8 @@ class TierListApp {
     this.searchResults = [];
     this.selectedId = null;
     this.draggingId = null;
+    this.pointerDrag = null;
+    this.suppressClickUntil = 0;
 
     this.renderShell();
     this.bindEvents();
@@ -131,7 +133,7 @@ class TierListApp {
           <div class="holding-head">
             <div>
               <strong>待放区</strong>
-              <span>电脑可拖拽；手机先点海报，再点上方分区放入。</span>
+              <span>电脑和手机都可拖拽；手机也可以先点海报，再点分区放入。</span>
             </div>
             <div class="holding-controls">
               <input class="sr-only" type="file" accept="image/*" multiple data-role="file-input" />
@@ -167,6 +169,11 @@ class TierListApp {
     });
 
     this.root.addEventListener("click", (event) => {
+      if (Date.now() < this.suppressClickUntil) {
+        event.preventDefault();
+        return;
+      }
+
       const target = event.target instanceof Element ? event.target : null;
       const actionEl = target?.closest("[data-action]");
       const itemEl = target?.closest("[data-item-id]");
@@ -203,6 +210,50 @@ class TierListApp {
       }
     });
 
+    this.root.addEventListener("pointerdown", (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("[data-action]")) {
+        return;
+      }
+
+      const itemEl = target?.closest("[data-item-id]");
+      if (!itemEl) {
+        return;
+      }
+
+      const itemId = itemEl.getAttribute("data-item-id");
+      if (!itemId) {
+        return;
+      }
+
+      this.selectedId = itemId;
+      this.deleteButtonEl.disabled = false;
+      this.pointerDrag = {
+        id: itemId,
+        itemEl,
+        ghostEl: null,
+        isDragging: false,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        width: itemEl.getBoundingClientRect().width,
+        height: itemEl.getBoundingClientRect().height,
+      };
+      itemEl.setPointerCapture?.(event.pointerId);
+    });
+
+    window.addEventListener("pointermove", (event) => {
+      this.handlePointerMove(event);
+    });
+
+    window.addEventListener("pointerup", (event) => {
+      this.finishPointerDrag(event);
+    });
+
+    window.addEventListener("pointercancel", (event) => {
+      this.finishPointerDrag(event);
+    });
+
     this.root.addEventListener("dragstart", (event) => {
       const target = event.target instanceof Element ? event.target : null;
       const itemEl = target?.closest("[data-item-id]");
@@ -210,6 +261,7 @@ class TierListApp {
         return;
       }
 
+      event.preventDefault();
       const itemId = itemEl.getAttribute("data-item-id");
       this.draggingId = itemId;
       this.selectedId = itemId;
@@ -302,7 +354,7 @@ class TierListApp {
     const renderItem = (item) => `
       <div
         class="rank-item ${item.id === this.selectedId ? "is-selected" : ""}"
-        draggable="true"
+        draggable="false"
         data-item-id="${item.id}"
         title="${escapeAttribute(item.name)}"
         role="button"
@@ -418,6 +470,105 @@ class TierListApp {
     this.selectedId = itemId;
     this.draggingId = null;
     this.render();
+  }
+
+  handlePointerMove(event) {
+    if (!this.pointerDrag || event.pointerId !== this.pointerDrag.pointerId) {
+      return;
+    }
+
+    const distance = Math.hypot(event.clientX - this.pointerDrag.startX, event.clientY - this.pointerDrag.startY);
+    if (!this.pointerDrag.isDragging && distance < 8) {
+      return;
+    }
+
+    event.preventDefault();
+    if (!this.pointerDrag.isDragging) {
+      this.startPointerDrag();
+    }
+
+    const ghostEl = this.pointerDrag.ghostEl;
+    if (!ghostEl) {
+      return;
+    }
+
+    ghostEl.style.left = `${event.clientX - this.pointerDrag.width / 2}px`;
+    ghostEl.style.top = `${event.clientY - this.pointerDrag.height / 2}px`;
+    ghostEl.style.width = `${this.pointerDrag.width}px`;
+    ghostEl.style.height = `${this.pointerDrag.height}px`;
+
+    const dropTarget = this.getDropTargetAt(event.clientX, event.clientY);
+    this.root.querySelectorAll("[data-drop-target]").forEach((target) => {
+      target.classList.toggle("is-over", target === dropTarget);
+    });
+    this.autoScrollDuringDrag(event.clientY);
+  }
+
+  startPointerDrag() {
+    if (!this.pointerDrag) {
+      return;
+    }
+
+    const ghostEl = this.pointerDrag.itemEl.cloneNode(true);
+    ghostEl.classList.add("drag-ghost");
+    ghostEl.querySelectorAll("[data-action]").forEach((el) => el.remove());
+    document.body.append(ghostEl);
+    this.pointerDrag.ghostEl = ghostEl;
+    this.pointerDrag.isDragging = true;
+    this.pointerDrag.itemEl.classList.add("is-pointer-source");
+  }
+
+  finishPointerDrag(event) {
+    if (!this.pointerDrag || event.pointerId !== this.pointerDrag.pointerId) {
+      return;
+    }
+
+    const drag = this.pointerDrag;
+    this.pointerDrag = null;
+    drag.itemEl.releasePointerCapture?.(event.pointerId);
+    drag.ghostEl?.remove();
+    drag.itemEl.classList.remove("is-pointer-source");
+    this.root.querySelectorAll(".is-over").forEach((el) => el.classList.remove("is-over"));
+
+    if (!drag.isDragging) {
+      this.selectedId = drag.id;
+      this.renderItems();
+      return;
+    }
+
+    this.suppressClickUntil = Date.now() + 350;
+    const dropTarget = this.getDropTargetAt(event.clientX, event.clientY);
+    if (dropTarget) {
+      this.moveItem(drag.id, dropTarget.getAttribute("data-drop-target"));
+      return;
+    }
+
+    this.renderItems();
+  }
+
+  getDropTargetAt(x, y) {
+    const hiddenGhost = this.pointerDrag?.ghostEl;
+    const previousPointerEvents = hiddenGhost?.style.pointerEvents;
+    if (hiddenGhost) {
+      hiddenGhost.style.pointerEvents = "none";
+    }
+    const element = document.elementFromPoint(x, y);
+    if (hiddenGhost) {
+      hiddenGhost.style.pointerEvents = previousPointerEvents ?? "";
+    }
+    return element?.closest?.("[data-drop-target]") ?? null;
+  }
+
+  autoScrollDuringDrag(clientY) {
+    const edgeSize = 86;
+    const maxStep = 18;
+    if (clientY < edgeSize) {
+      window.scrollBy({ top: -maxStep, behavior: "auto" });
+      return;
+    }
+    if (clientY > window.innerHeight - edgeSize) {
+      window.scrollBy({ top: maxStep, behavior: "auto" });
+    }
   }
 
   normalizeTarget(targetId) {
